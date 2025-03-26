@@ -3,22 +3,22 @@ import sqlite3
 import base64
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
+import utils
 
-from main import IS_WINDOWS, IS_LINUX, IS_MAC
 from config import FIREFOX_PATH
 
 
 # Fonction pour récupérer le profil Firefox principal
 def retrieve_profiles():
-    for paths in FIREFOX_PATH.items():
-        if IS_WINDOWS:
-            user_data_path = paths["windows"]
-        elif IS_LINUX:
-            user_data_path = paths["linux"]
-        else:
-            user_data_path = paths["mac"]
-            
-    # Surement possibilité d'avoir plusieurs profils sur Firefox        
+    
+    if utils.IS_WINDOWS:
+        user_data_path = FIREFOX_PATH["windows"]
+    elif utils.IS_LINUX:
+        user_data_path = FIREFOX_PATH["linux"]
+    else:
+        user_data_path = FIREFOX_PATH["mac"]
+
+    # Surement possibilité d'avoir plusieurs profils sur Firefox
     profiles = []
     profiles_ini = user_data_path / "profiles.ini"
 

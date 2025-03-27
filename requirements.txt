@@ -1,4 +1,4 @@
 pycryptodome
 cryptography
 pywin32
-sqlite3
+sqlite-utils

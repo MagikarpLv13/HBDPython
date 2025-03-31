@@ -49,7 +49,7 @@ CHROMIUM_BROWSERS = {
     },
     "db" : {
         "history": "History",
-        "cookies": "Cookies",
+        "cookies": "Network/Cookies",
         "bookmarks": "Bookmarks",
         "credit_cards": "Web Data",
         "extensions": "Extensions",

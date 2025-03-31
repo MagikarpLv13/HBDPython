@@ -5,7 +5,6 @@ HBDPython est une implémentation en Python inspirée de **HackBrowserData**. Ce
 ## ✨ Fonctionnalités
 - Récupération des **mots de passe enregistrés**
 - Extraction de l'**historique de navigation**
-- Collecte des **cookies**
 - Sauvegarde des **favoris (bookmarks)**
 - Récupération des **cartes bancaires enregistrées**
 - Extraction de l'**historique de téléchargement**

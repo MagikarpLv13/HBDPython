@@ -2,3 +2,4 @@ pycryptodome
 cryptography
 pywin32
 sqlite-utils
+flet

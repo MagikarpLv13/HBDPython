@@ -1,6 +1,63 @@
 import os
 from pathlib import Path
 
+# Configuration du chemin par défaut pour les résultats
+DEFAULT_RESULT_PATH = Path.home() / "HBDPython" / "browser-data-extractor"
+
+# Dossier de profil customisé par l'utilisateur
+CUSTOM_PROFILE_PATH = ""
+
+OPTIONS = {
+    "passwords" : {
+        "name": "Mots de passe",
+        "description": "Récupérer les mots de passe enregistrés",
+        "default": True,
+        "active": True,
+    },
+    "credit_cards" : {
+        "name": "Cartes de crédit",
+        "description": "Récupérer les cartes de crédit enregistrées",
+        "default": True,
+        "active": True,
+    },
+    "cookies" : {
+        "name": "Cookies",
+        "description": "Récupérer les cookies",
+        "default": True,
+        "active": True,
+    },
+    "bookmarks" : {
+        "name": "Favoris",
+        "description": "Récupérer les favoris",
+        "default": True,
+        "active": True,
+    },
+    "extensions" : {
+        "name": "Extensions",
+        "description": "Récupérer les extensions installées",
+        "default": True,
+        "active": True,
+    },
+    "history" : {
+        "name": "Historique",
+        "description": "Récupérer l'historique de navigation",
+        "default": True,
+        "active": True,
+    },
+    "download_history" : {
+        "name": "Historique de téléchargement",
+        "description": "Récupérer l'historique de téléchargement",
+        "default": True,
+        "active": True,
+    },
+    "local_storage" : {
+        "name": "Stockage local",
+        "description": "Récupérer le stockage local",
+        "default": True,
+        "active": True,
+    },
+}
+
 # Définition des navigateurs Chromium supportés et le chemin des profils par défaut sur chaque système
 CHROMIUM_BROWSERS = {
     "browser": {

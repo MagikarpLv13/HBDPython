@@ -57,18 +57,22 @@ if __name__ == "__main__":
             on_click=lambda _: profil_picker.get_directory_path(),
             mouse_cursor=ft.MouseCursor.CLICK,
         )
-        
-        
+
+        # Met à jour la valeur de l'option dans le fichier de configuration
+        def checkbox_changed(e):
+            config.OPTIONS[e.control.key]["active"] = e.control.value
+
         checkboxes = []
         for key, item in config.OPTIONS.items():
             checkbox = ft.Checkbox(
+                key=key,
                 label=item["name"],
                 value=item.get("default", False),
                 tooltip=item.get("description", ""),
-                width=200
+                width=200,
+                on_change=checkbox_changed,
             )
             checkboxes.append(checkbox)
-
 
         def result_picker_folder(e: ft.FilePickerResultEvent):
             if e.path:
@@ -81,7 +85,7 @@ if __name__ == "__main__":
                     config.DEFAULT_RESULT_PATH = e.path    
                 except OSError as error:
                     result_folder_input.value = f"Erreur de création du dossier : {error}"
-    
+
         def result_profil_folder(e: ft.FilePickerResultEvent):
             if e.path:
                 profil_path_input.value = e.path

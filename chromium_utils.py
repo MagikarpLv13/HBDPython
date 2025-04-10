@@ -142,7 +142,7 @@ def extract_passwords(browser: Browser, profile: Profile = None):
     if nb_pass:
         print(f"🔑 {nb_pass} mot(s) de passe trouvé(s)\n")
     else:
-        print("❌ Aucun mot de passe trouvé\n")    
+        print("❌ Aucun mot de passe trouvé\n")
 
 # Fonction pour extraire l'historique de navigation
 def extract_history(browser, profile: Profile = None):
@@ -164,17 +164,17 @@ def extract_history(browser, profile: Profile = None):
         conn = sqlite3.connect(str(temp_db))
         cursor = conn.cursor()
         cursor.execute("SELECT url, title, visit_count, last_visit_time FROM urls")
-
-        counter = 0
+        
+        history_list = []
         for url, title, visit_count, last_visit_time in cursor.fetchall():
-            print(f"[🌍] URL: {url}")
-            print(f"[📜] Title: {title}")
-            print(f"[🔍] Visites: {visit_count}")
-            print(f"[🕒] Dernière visite: {last_visit_time}\n")
-            counter += 1
-            if counter > 2:
-                break
-
+            history_list.append({
+            "url": url,
+            "title": title,
+            "visit_count": visit_count,
+            "last_visit_time": last_visit_time
+            })
+        utils.write_to_csv(history_list, "history.csv", browser.name, profile.name)
+        
         conn.close()
         os.remove(temp_db)
 

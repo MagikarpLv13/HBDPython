@@ -66,7 +66,7 @@ pip install -r requirements.txt
 ## 🛠️ Utilisation
 Lance le script principal pour commencer l'extraction des données :
 ```bash
-python main.py
+flet main.py
 ```
 
 ## 📘 Licence

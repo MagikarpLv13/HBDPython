@@ -8,37 +8,44 @@ import os
 if __name__ == "__main__":
 
     def main(page: ft.Page):
-        page.title = "HBDPython"
-        page.theme_mode = ft.ThemeMode.DARK
-        page.padding = 20
-        page.scroll = ft.ScrollMode.AUTO
-        page.bgcolor = ft.Colors.BLACK
-        log_output = ft.Column(auto_scroll=True)
+        utils.PAGE = page
+        utils.PAGE.title = "HBDPython"
+        utils.PAGE.theme_mode = ft.ThemeMode.DARK
+        utils.PAGE.padding = 20
+        utils.PAGE.scroll = ft.ScrollMode.AUTO
+        utils.PAGE.bgcolor = ft.Colors.BLACK
+        utils.LOG = ft.ListView(
+            expand=True,
+            spacing=10,
+            height=200,
+            width=400,
+            padding=10,            
+        )
+        
 
         def switch_to_config(e=None):
             main_view.visible = False
             config_view.visible = True
 
             # Ajout des contrôles de sélection de fichiers
-            page.add(result_picker, profil_picker)
-            page.update()
+            utils.PAGE.add(result_picker, profil_picker)
+            utils.PAGE.update()
 
         def switch_to_main(e=None):
             config_view.visible = False
             main_view.visible = True
 
             # Suppression des contrôles de sélection de fichiers
-            page.remove(result_picker, profil_picker)
-            page.update()
+            utils.PAGE.remove(result_picker, profil_picker)
+            utils.PAGE.update()
 
         def run_clicked(e):
-            log_output.controls.append(
-                ft.Text("▶️ Exécution en cours...", color=ft.Colors.GREEN_300)
-            )
+            utils.add_to_log("▶️ Exécution en cours...", style="info")
             utils.set_platform()
             firefox_pass()
             chrome_data()
-            page.update()       
+            utils.add_to_log("✅ Extraction terminée !", style="success")
+            utils.PAGE.update()       
 
         # Text inputs
         result_folder_input = ft.TextField(
@@ -130,7 +137,7 @@ if __name__ == "__main__":
 
         # Zone de logs
         log_container = ft.Container(
-            content=log_output,
+            content=utils.LOG,
             height=200,
             width=400,
             padding=10,
@@ -173,6 +180,6 @@ if __name__ == "__main__":
         )
 
         # Ajout des vues à la page
-        page.add(main_view, config_view)
+        utils.PAGE.add(main_view, config_view)
 
     ft.app(target=main)

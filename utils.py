@@ -2,10 +2,14 @@ import sys
 import csv
 import config
 import os
+import flet as ft
+import time
 
 IS_WINDOWS = False
 IS_LINUX = False
 IS_MAC = False
+LOG = None
+PAGE = None
 
 def set_platform():
     global IS_WINDOWS, IS_LINUX, IS_MAC
@@ -14,6 +18,7 @@ def set_platform():
     IS_LINUX = sys.platform.startswith("linux")
     IS_MAC = sys.platform.startswith("darwin")
 
+# Transforme la data en csv
 def write_to_csv(data, file_name, browser_name:str, profile_name:str = None) -> None:
     """
     Write data from a cursor.fetchall() result to a CSV file.
@@ -36,7 +41,7 @@ def write_to_csv(data, file_name, browser_name:str, profile_name:str = None) -> 
 
     create_destination_folder(file_path)
 
-    print(f"✏️ Writing to {file_path}...")
+    add_to_log(f"✏️ Écriture des résultats dans {file_path}...", style="info")
     with open(file_path, mode='w', newline='', encoding='utf-8') as csv_file:
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         writer.writeheader()
@@ -53,3 +58,24 @@ def create_destination_folder(path):
             os.makedirs(os.path.dirname(path), exist_ok=True)
         except OSError as e:
             raise OSError(f"Error creating directory: {e}")
+       
+# Fonction pour ajouter un message au log
+def add_to_log(message: str, style: str = None):
+    """
+    Add a message to the log display.
+    :param message: Message to log.
+    """
+    color_map = {
+        "info": ft.Colors.BLUE_300,
+        "error": ft.Colors.RED_300,
+        "success": ft.Colors.GREEN_300,
+        None: ft.Colors.GREY_300
+    }
+
+    log_message = ft.Text(message, color=color_map.get(style, ft.Colors.GREY_300))
+
+    if LOG:
+        LOG.controls.append(log_message)
+        LOG.scroll_to(-1, duration=0.05)
+        time.sleep(0.05)
+        PAGE.update()

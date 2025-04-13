@@ -4,9 +4,6 @@ from pathlib import Path
 # Configuration du chemin par défaut pour les résultats
 DEFAULT_RESULT_PATH = Path.home() / "HBDPython" / "browser-data-extractor"
 
-# Dossier de profil customisé par l'utilisateur
-CUSTOM_PROFILE_PATH = ""
-
 OPTIONS = {
     "passwords" : {
         "name": "Mots de passe",
@@ -113,10 +110,4 @@ CHROMIUM_BROWSERS = {
         "logins": ["Login Data", "Login Data For Account"],
         "local_storage": "Local Storage/leveldb",
     }
-}
-
-FIREFOX_PATH = {
-    "windows": Path(os.getenv("APPDATA")) / "Mozilla" / "Firefox" / "Profiles",
-    "linux": Path.home() / ".mozilla" / "firefox",
-    "mac": Path.home() / "Library" / "Application Support" / "Firefox",
 }

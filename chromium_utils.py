@@ -170,7 +170,9 @@ def extract_history(browser, profile: Profile = None):
             })
             
         if history_list:
-            utils.write_to_csv(history_list, "history.csv", browser.name, profile.name)   
+            utils.write_to_csv(history_list, "history.csv", browser.name, profile.name)
+        else:
+            utils.add_to_log(f"😫 Aucun historique trouvé", style="info")    
         
         conn.close()
         os.remove(temp_db)
@@ -214,6 +216,8 @@ def extract_download_history(browser, profile: Profile = None):
             
         if download_history_list:
             utils.write_to_csv(download_history_list, "download_history.csv", browser.name, profile.name)
+        else:
+            utils.add_to_log(f"😫 Aucun historique de téléchargement trouvé", style="info")
 
         conn.close()
         os.remove(temp_db)
@@ -264,6 +268,11 @@ def extract_cookies(browser, profile: Profile = None):
                     "has_expires": has_expires,
                     "is_persistent": is_persistent
                 })
+           
+        if cookies_list:
+            utils.write_to_csv(cookies_list, "cookies.csv", browser.name, profile.name)
+        else:
+            utils.add_to_log(f"😫 Aucun cookie trouvé", style="info")        
                 
         conn.close()
         os.remove(temp_db)
@@ -301,7 +310,10 @@ def extract_bookmarks(browser, profile: Profile = None):
                             "date_added": bookmark.get("date_added", ""),
                             "type": bookmark.get("type", "")
                         })
-            utils.write_to_csv(bookmarks_list, "bookmarks.csv", browser.name, profile.name)
+            if bookmarks_list:   
+                utils.write_to_csv(bookmarks_list, "bookmarks.csv", browser.name, profile.name)
+            else:
+                utils.add_to_log(f"😫 Aucun favori trouvé", style="info")
 
         os.remove(temp_db)
 
@@ -378,7 +390,7 @@ def extract_credit_cards(browser, profile: Profile = None):
         credit_cards_db = browser.user_data_path / CHROMIUM_BROWSERS["db"]["credit_cards"]
 
     if not credit_cards_db.exists():
-        utils.add_to_log(f"😒 Fichier de cartes de crédit non présent")
+        utils.add_to_log(f"😒 Fichier de cartes de crédit non présent", "info")
         return
 
     # Copie temporaire du fichier de cartes de crédit
@@ -404,6 +416,9 @@ def extract_credit_cards(browser, profile: Profile = None):
             
         if credit_card_list:
             utils.write_to_csv(credit_card_list, "credit_cards.csv", browser.name, profile.name)
+            
+        else:
+            utils.add_to_log(f"😫 Aucune carte de crédit trouvée", style="info")    
 
         conn.close()
         os.remove(temp_db)
@@ -438,7 +453,7 @@ def extract_local_storage(browser, profile: Profile = None):
     finally:
         shutil.rmtree(temp_db, ignore_errors=True)
         
-        
+# Récupération des données du local storage        
 def parse_chromium_local_storage(localstorage_content) -> dict:
     keys = ["key", "value"]
     local_storage_data = {}

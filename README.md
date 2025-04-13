@@ -1,11 +1,11 @@
 # HBDPython
 
-HBDPython est une implémentation en Python inspirée de **HackBrowserData**. Cet outil permet d'extraire et d'analyser les données sensibles stockées par les navigateurs Web. Il fonctionne sur **Windows, Linux et macOS**, prenant en charge les navigateurs **Chromium** et **Firefox**. Les données récupérées sont au format **CSV**.
+HBDPython est une implémentation en Python inspirée de **HackBrowserData**. Cet outil permet d'extraire et d'analyser les données sensibles stockées par les navigateurs Web. Il fonctionne sur **Windows, Linux et macOS**, prenant en charge les navigateurs **Chromium**. Les données récupérées sont au format **CSV**.
 
 ## ✨ Fonctionnalités
 - Récupération des **mots de passe enregistrés**
 - Extraction de l'**historique de navigation**
-- Récupération des **cookies** ❌ **Ne fonctionne pas pour le moment sur Chromium (MAJ Google)**
+- Récupération des **cookies** ❌ **Ne fonctionne pas pour le moment (MAJ Google)**
 - Sauvegarde des **favoris (bookmarks)**
 - Récupération des **cartes bancaires enregistrées**
 - Extraction de l'**historique de téléchargement**
@@ -19,13 +19,9 @@ HBDPython est une implémentation en Python inspirée de **HackBrowserData**. Ce
 - macOS
 
 ### 📝 TODO
-- [ ] Ajouter une fonction qui permette de ressortir les données au format csv
-- [ ] Permettre de configurer le dossier de sortie des données
-- [ ] Ajouter une interface graphique
 - [ ] Permettre de choisir le chemin à partir duquel chercher
 - [ ] Ajouter une fonction pour aller chercher les profils de tous les utilisateurs du PC (si le programme est lancé en admin/root)
 - [ ] Fixer la récupération de local storage
-- [ ] Tester l'extraction des cartes de crédit
 
 ### **Navigateurs compatibles**
 #### 🦄 Basés sur Chromium :
@@ -34,9 +30,6 @@ HBDPython est une implémentation en Python inspirée de **HackBrowserData**. Ce
 - Microsoft Edge
 - Opera
 - Vivaldi
-
-#### 🧠 Firefox :
-- Mozilla Firefox
 
 ## ⚡ Installation
 

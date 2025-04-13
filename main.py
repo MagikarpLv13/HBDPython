@@ -1,5 +1,4 @@
 from chromium_utils import extract_data as chrome_data
-from firefox_utils import extract_passwords as firefox_pass
 import flet as ft
 import utils
 import config
@@ -14,11 +13,13 @@ if __name__ == "__main__":
         utils.PAGE.padding = 20
         utils.PAGE.scroll = ft.ScrollMode.AUTO
         utils.PAGE.bgcolor = ft.Colors.BLACK
+        utils.PAGE.window.height = 600
+        utils.PAGE.window.width = 1000
         utils.LOG = ft.ListView(
             expand=True,
             spacing=10,
             height=200,
-            width=400,
+            width=500,
             padding=10,            
         )
         
@@ -28,7 +29,7 @@ if __name__ == "__main__":
             config_view.visible = True
 
             # Ajout des contrôles de sélection de fichiers
-            utils.PAGE.add(result_picker, profil_picker)
+            utils.PAGE.add(result_picker)
             utils.PAGE.update()
 
         def switch_to_main(e=None):
@@ -36,16 +37,24 @@ if __name__ == "__main__":
             main_view.visible = True
 
             # Suppression des contrôles de sélection de fichiers
-            utils.PAGE.remove(result_picker, profil_picker)
+            utils.PAGE.remove(result_picker)
             utils.PAGE.update()
 
+        # Mise à jour de la visibilité du bouton après l'extraction
         def run_clicked(e):
+            # Cacher le bouton de résultats pendant l'extraction
+            view_results_button.visible = False
+            # Empêcher le clic sur le bouton pendant l'extraction
+            header.controls[2].disabled = True            
             utils.add_to_log("▶️ Exécution en cours...", style="info")
             utils.set_platform()
-            firefox_pass()
             chrome_data()
             utils.add_to_log("✅ Extraction terminée !", style="success")
-            utils.PAGE.update()       
+            # Afficher le bouton de résultats après l'extraction
+            view_results_button.visible = True
+            # Rendre le bouton de configuration cliquable à nouveau
+            header.controls[2].disabled = False
+            utils.PAGE.update()      
 
         # Text inputs
         result_folder_input = ft.TextField(
@@ -54,14 +63,6 @@ if __name__ == "__main__":
             width=600,
             read_only=True,
             on_click=lambda _: result_picker.get_directory_path(),
-            mouse_cursor=ft.MouseCursor.CLICK,
-        )
-
-        profil_path_input = ft.TextField(
-            label="📂 Dossier du profil utilisateur (Automatique par défaut), cliquez pour modifier",
-            width=800,
-            read_only=True,
-            on_click=lambda _: profil_picker.get_directory_path(),
             mouse_cursor=ft.MouseCursor.CLICK,
         )
 
@@ -93,18 +94,9 @@ if __name__ == "__main__":
                 except OSError as error:
                     result_folder_input.value = f"Erreur de création du dossier : {error}"
 
-        def result_profil_folder(e: ft.FilePickerResultEvent):
-            if e.path:
-                profil_path_input.value = e.path
-                profil_path_input.update()
-
         # File pickers
         result_picker = ft.FilePicker(
             on_result=result_picker_folder
-        )
-
-        profil_picker = ft.FilePicker(
-            on_result=result_profil_folder
         )
 
         config_dialog = ft.Column(
@@ -112,11 +104,6 @@ if __name__ == "__main__":
                 ft.Row(
                     controls=[
                         result_folder_input,
-                    ],
-                ),
-                ft.Row(
-                    controls=[
-                        profil_path_input,
                     ],
                 ),
                 ft.Column(controls=checkboxes),
@@ -139,7 +126,7 @@ if __name__ == "__main__":
         log_container = ft.Container(
             content=utils.LOG,
             height=200,
-            width=400,
+            width=600,
             padding=10,
             bgcolor=ft.Colors.with_opacity(0.1, ft.Colors.WHITE),
             border_radius=10,
@@ -157,9 +144,23 @@ if __name__ == "__main__":
             spacing=30,
             expand=True,
         )
+        
+        # Bouton Résultats centré
+        view_results_button = ft.Container(
+            content=ft.ElevatedButton(
+            "📂 Voir les résultats",
+            on_click=lambda _: os.startfile(config.DEFAULT_RESULT_PATH),
+            visible=True,
+            width=200,
+            height=50,
+            ),
+            alignment=ft.alignment.center,
+            visible=False,
+        )
 
         ### MAIN VIEW ###
         main_view = ft.Column(controls=[header, content], visible=True)
+        main_view.controls.append(view_results_button)
 
         ### CONFIG VIEW ###
         config_view = ft.Column(
@@ -169,7 +170,7 @@ if __name__ == "__main__":
                 ft.Row(
                     controls=[
                         ft.ElevatedButton(
-                            "⬅️ Retour",
+                            "🔙 Retour",
                             on_click=switch_to_main,
                         )
                     ],
